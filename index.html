@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+
+<head>
+    <title>World Happiness Data Presentation</title>
+    <!-- Load plotly.js into the DOM: https://cdn.plot.ly/plotly-2.34.0.min.js; https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js -->
+    <script src='plotly-2.34.0.min.js'></script>
+    <script src='d3.min.js'></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+
+        #myDiv {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+    <!-- Load CSS libraries -->
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="row">
+        <div class="col-sm-4">
+            <h4>Plot</h4>
+            <div class="user-control">
+                <select id="Plot" class="form-control" onchange="figselect()">
+                    <option value="World Map">World Map</option>
+                    <option value="Line Chart">Line Chart</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-sm-4" id="div_choice1">
+            <h4>Variable</h4>
+            <div class="user-control">
+                <select id="Variable" class="form-control" onchange="dataManipulation()">
+                    <option value="Life Ladder">Life Ladder</option>
+                    <option value="Log GDP per capita">Log GDP per Capita</option>
+                    <option value="Social support">Social Support</option>
+                    <option value="Freedom to make life choices">Freedom to Make Life Choices</option>
+                    <option value="Perceptions of corruption">Perceptions of Corruption</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-sm-4" id="div_choice2">
+            <h4>Type</h4>
+            <div class="user-control">
+                <select id="Type" class="form-control" onchange="dataManipulation()">
+                    <option value="value">Value</option>
+                    <option value="change">Change</option>
+                </select>
+            </div>
+        </div>
+    </div>
+     <h4 style="text-indent:45px;">Source:&nbsp;<a href="https://happiness-report.s3.amazonaws.com/2024/DataForTable2.1.xls">World Happiness Report 2024</a>, University of Oxford: Wellbeing Research Centre.</h4>
+    <div id='myDiv'><!-- Plotly chart will be drawn inside this DIV --></div>
+    <script src='data.js'></script>
+    <script src='plot.js'></script>
+
+</body>
+
+</html>
