@@ -208,6 +208,7 @@ var layout = {
 if (update == false) {
 Plotly.newPlot('myDiv', data_plot, layout).then(function() {
   Plotly.addFrames('myDiv', frames_plot);
+  update = true;
 });
 } else {
 Plotly.react('myDiv', data_plot, layout).then(function() {
@@ -217,7 +218,6 @@ select_box_design();
 }
 
 data_presentation('Life Ladder', 'value');
-update = true;
 
 function dataManipulation() {
   var selectBox1 = document.getElementById("Variable");
@@ -349,10 +349,12 @@ function searchLocation1(variable, locationName_string, update, compare_ornot) {
 if (data_plot.length >= 1) {
 if (update == false) {
 Plotly.newPlot('myDiv', data_plot, layout);
+update = true;
 } else {
 Plotly.react('myDiv', data_plot, layout);}
 } else {
 Plotly.purge('myDiv');
+update = false;
 }
 }
 
@@ -361,7 +363,6 @@ function searchLocation1Update() {
   var variable = selectBox1.options[selectBox1.selectedIndex].value;
   const locationInput = document.getElementById("locationInput");
   const locationName_string = locationInput.value.trim();
-  update = true;
   const compareSelectbox = document.getElementsByName("compareValue")[0];
   const compare_ornot = compareSelectbox.checked;
   if (locationName_string.length > 0) {
@@ -412,12 +413,13 @@ function searchLocation2(variable_ornot, locationName, update) {
     }}
   }
   if (data_plot.length >= 2) {
-    var plot_title = 'All the variables of ' + locationname + " (Compared to the first year documented, %)";
+    var plot_title = 'All the variables of ' + locationname;
   } else if (data_plot.length == 1) {
-    var plot_title = data_plot[0].name + ' of ' + locationname + " (Compared to the first year documented, %)";
+    var plot_title = data_plot[0].name + ' of ' + locationname;
   } else {
-    var plot_title = locationname + " (Compared to the first year documented, %)";
+    var plot_title = locationname;
   }
+  var plot_title = plot_title + " (Compared to the first year documented, %)";
   var layout = {
     title: plot_title,
     xaxis: {
@@ -445,10 +447,12 @@ function searchLocation2(variable_ornot, locationName, update) {
 if (data_plot.length >= 1) {
 if (update == false) {
 Plotly.newPlot('myDiv', data_plot, layout);
+update = true;
 } else {
 Plotly.react('myDiv', data_plot, layout);}
 } else {
 Plotly.purge('myDiv');
+update = false;
 }
 }
 
@@ -477,17 +481,308 @@ function searchLocation2Update() {
 }
 
 
+function histogramPlot(variable, update) {
+  var data_use = data.filter(function (value) {
+    return value[variable] != null
+  });
+  var color0 = 'rgb(0, 102, 204)';
+  if (variable == 'Perceptions of corruption' | variable == 'Negative affect') {
+      color0 = 'rgb(204, 0, 0)';
+  }
+  var year_min = Math.min.apply(null, data_use.map(function(item) { return item.year; }));
+  var year_max = Math.max.apply(null, data_use.map(function(item) { return item.year; }));
+  var year = year_min;
+  var n = year_max - year_min;
+  var histograms_plot = [];
+  var slider_steps = [];
+  for (var i = 0; i <= n; i++) {
+    var x = filter_and_unpack(data_use, variable, year);
+    histograms_plot[i] = {data: [{x: x}], name: year}
+    slider_steps.push ({
+        label: year.toString(),
+        method: "animate",
+        args: [[year], {
+            mode: "immediate",
+            transition: {duration: 300},
+            frame: {duration: 300}
+          }
+        ]
+      })
+      year = year + 1;
+      }
+  var data_plot = [{
+    type: 'histogram',
+    x: histograms_plot[0].data[0].x,
+    histnorm: 'probability',
+    marker: {color: color0}, 
+    name: '', 
+    hovertemplate: 'Interval: <b>%{x}</b><br>Frequency: <b>%{y:.3f}</b>'
+  }];
+  var layout = {
+    title: variable + ' (distribution)',
+    xaxis: {
+      title: {
+        text: variable,
+        font: {
+          family: 'Arial',
+          size: 16,
+          color: '#7f7f7f'
+        }
+      }
+    }, 
+    yaxis: {
+      title: {
+        text: 'Frequency',
+        font: {
+          family: 'Arial',
+          size: 16,
+          color: '#7f7f7f'
+        }
+      }
+    },
+    margin: { r: 50, t: 60, b: 0, l: 100 },
+    autosize: true,
+    updatemenus: [{
+      x: 0.05,
+      y: 0,
+      yanchor: "top",
+      xanchor: "right",
+      showactive: false,
+      direction: "left",
+      type: "buttons",
+      pad: {"t": 87, "r": 10},
+      buttons: [{
+        method: "animate",
+        args: [null, {
+          fromcurrent: true,
+          transition: {
+            duration: 200,
+          },
+          frame: {
+            duration: 500
+          }
+        }],
+        label: "Play"
+      }, {
+        method: "animate",
+        args: [
+          [null],
+          {
+            mode: "immediate",
+            transition: {
+              duration: 0
+            },
+            frame: {
+              duration: 0
+            }
+          }
+        ],
+        label: "Pause"
+      }]
+    }],
+    sliders: [{
+      active: 0,
+      steps: slider_steps,
+      x: 0.05,
+      len: 0.9,
+      xanchor: "left",
+      y: 0,
+      yanchor: "top",
+      pad: {t: 50, b: 10},
+      currentvalue: {
+        visible: true,
+        prefix: "Year: ",
+        xanchor: "right",
+        font: {
+          size: 20,
+          color: "#666"
+        }
+      },
+      transition: {
+        duration: 300,
+        easing: "cubic-in-out"
+      }
+    }]
+  };
+  if (update == false) {
+    Plotly.newPlot('myDiv', data_plot, layout).then(function() {
+      Plotly.addFrames('myDiv', histograms_plot);
+    });
+    update = true;
+    } else {
+    Plotly.react('myDiv', data_plot, layout).then(function() {
+      Plotly.addFrames('myDiv', histograms_plot);
+    });}
+}
+
+function histogramUpdate() {
+  var selectBox1 = document.getElementById("Variable");
+  var variable = selectBox1.options[selectBox1.selectedIndex].value;
+  histogramPlot(variable, update);
+}
+
+
+function densityPlot(variable1, variable2, update) {
+  var data_use = data.filter(function (value) {
+    return value[variable1] != null & value[variable2] != null
+  });
+  var year_min = Math.min.apply(null, data_use.map(function(item) { return item.year; }));
+  var year_max = Math.max.apply(null, data_use.map(function(item) { return item.year; }));
+  var year = year_min;
+  var n = year_max - year_min;
+  var density_plot = [];
+  var slider_steps = [];
+  for (var i = 0; i <= n; i++) {
+    var x = filter_and_unpack(data_use, variable1, year);
+    var y = filter_and_unpack(data_use, variable2, year);
+    density_plot[i] = {data: [{x: x, y: y}], name: year}
+    slider_steps.push ({
+        label: year.toString(),
+        method: "animate",
+        args: [[year], {
+            mode: "immediate",
+            transition: {duration: 300},
+            frame: {duration: 300}
+          }
+        ]
+      })
+      year = year + 1;
+      }
+  console.log(density_plot);
+  var data_plot = [{
+    type: 'histogram2dcontour', 
+    x: density_plot[0].data[0].x,
+    y: density_plot[0].data[0].y, 
+    name: 'density',
+    ncontours: 20,
+    colorscale: 'Hot',
+    reversescale: true,
+    showscale: false
+  }];
+  var layout = {
+    title: variable1 + ' and ' + variable2 + ' (density)',
+    showlegend: false,
+    xaxis: {
+      title: {
+        text: variable1,
+        font: {
+          family: 'Arial',
+          size: 16,
+          color: '#7f7f7f'
+        }
+      }, 
+      autorange: true
+    }, 
+    yaxis: {
+      title: {
+        text: variable2,
+        font: {
+          family: 'Arial',
+          size: 16,
+          color: '#7f7f7f'
+        }
+      }, 
+      autorange: true
+    },
+    hovermode: 'closest',
+    bargap: 0,
+    margin: { r: 50, t: 60, b: 0, l: 100 },
+    autosize: true,
+    updatemenus: [{
+      x: 0.05,
+      y: 0,
+      yanchor: "top",
+      xanchor: "right",
+      showactive: false,
+      direction: "left",
+      type: "buttons",
+      pad: {"t": 87, "r": 10},
+      buttons: [{
+        method: "animate",
+        args: [null, {
+          fromcurrent: true,
+          transition: {
+            duration: 200,
+          },
+          frame: {
+            duration: 500
+          }
+        }],
+        label: "Play"
+      }, {
+        method: "animate",
+        args: [
+          [null],
+          {
+            mode: "immediate",
+            transition: {
+              duration: 0
+            },
+            frame: {
+              duration: 0
+            }
+          }
+        ],
+        label: "Pause"
+      }]
+    }],
+    sliders: [{
+      active: 0,
+      steps: slider_steps,
+      x: 0.05,
+      len: 0.9,
+      xanchor: "left",
+      y: 0,
+      yanchor: "top",
+      pad: {t: 50, b: 10},
+      currentvalue: {
+        visible: true,
+        prefix: "Year: ",
+        xanchor: "right",
+        font: {
+          size: 20,
+          color: "#666"
+        }
+      },
+      transition: {
+        duration: 300,
+        easing: "cubic-in-out"
+      }
+    }]
+  };
+  if (update == false) {
+    Plotly.newPlot('myDiv', data_plot, layout).then(function() {
+      Plotly.addFrames('myDiv', density_plot);
+    });
+    update = true;
+    } else {
+    Plotly.react('myDiv', data_plot, layout).then(function() {
+      Plotly.addFrames('myDiv', density_plot);
+    });}
+}
+
+function densityUpdate() {
+  var selectBox1 = document.getElementById("Variable1");
+  var variable1 = selectBox1.options[selectBox1.selectedIndex].value;
+  var selectBox2 = document.getElementById("Variable2");
+  var variable2 = selectBox2.options[selectBox2.selectedIndex].value;
+  densityPlot(variable1, variable2, update);
+}
+
 function figselect() {
   var choice1_html1 = '\n            <h4>Variable</h4>\n            <div class=\"user-control\">\n                <select id=\"Variable\" class=\"form-control\" onchange=\"dataManipulation()\">\n                    <option value=\"Life Ladder\">Life Ladder</option>\n                    <option value=\"Log GDP per capita\">Log GDP per capita</option>\n                    <option value=\"Social support\">Social support</option>\n                    <option value=\"Freedom to make life choices\">Freedom to make life choices</option>\n                    <option value=\"Perceptions of corruption\">Perceptions of corruption</option>\n                    <option value=\"Positive affect\">Positive affect</option>\n                    <option value=\"Negative affect\">Negative affect</option>\n                </select>\n            </div>\n        ';
   var choice1_html2 = '\n            <h4 class="inline">Variable</h4>&nbsp;&nbsp;<input type="checkbox" name="compareValue" onclick="searchLocation1Update()"><text>Compared to the first year documented</text>\n            <div class=\"user-control\">\n                <select id=\"Variable\" class=\"form-control\" onchange=\"searchLocation1Update()\">\n                    <option value=\"Life Ladder\">Life Ladder</option>\n                    <option value=\"Log GDP per capita\">Log GDP per capita</option>\n                    <option value=\"Social support\">Social support</option>\n                    <option value=\"Freedom to make life choices\">Freedom to make life choices</option>\n                    <option value=\"Perceptions of corruption\">Perceptions of corruption</option>\n                    <option value=\"Positive affect\">Positive affect</option>\n                    <option value=\"Negative affect\">Negative affect</option>\n                </select>\n            </div>\n        ';
   var choice1_html3 = '\n            <h4>Variable</h4>\n            <div class=\"user-control\">\n                <select id=\"Variable\" class=\"form-control\" onchange=\"searchLocation2Update()\">\n                    <option value=\"All the variables\">All the variables</option>\n                    <option value=\"Life Ladder\">Life Ladder</option>\n                    <option value=\"Log GDP per capita\">Log GDP per capita</option>\n                    <option value=\"Social support\">Social support</option>\n                    <option value=\"Freedom to make life choices\">Freedom to make life choices</option>\n                    <option value=\"Perceptions of corruption\">Perceptions of corruption</option>\n                    <option value=\"Positive affect\">Positive affect</option>\n                    <option value=\"Negative affect\">Negative affect</option>\n                </select>\n            </div>\n        ';
+  var choice1_html4 = '\n            <h4>Variable</h4>\n            <div class=\"user-control\">\n                <select id=\"Variable\" class=\"form-control\" onchange=\"histogramUpdate()\">\n                    <option value=\"Life Ladder\">Life Ladder</option>\n                    <option value=\"Log GDP per capita\">Log GDP per capita</option>\n                    <option value=\"Social support\">Social support</option>\n                    <option value=\"Freedom to make life choices\">Freedom to make life choices</option>\n                    <option value=\"Perceptions of corruption\">Perceptions of corruption</option>\n                    <option value=\"Positive affect\">Positive affect</option>\n                    <option value=\"Negative affect\">Negative affect</option>\n                </select>\n            </div>\n        ';
+  var choice1_html5 = '\n            <h4>Variable1</h4>\n            <div class=\"user-control\">\n                <select id=\"Variable1\" class=\"form-control\" onchange=\"densityUpdate()\">\n                    <option value=\"Life Ladder\">Life Ladder</option>\n                    <option value=\"Log GDP per capita\">Log GDP per capita</option>\n                    <option value=\"Social support\">Social support</option>\n                    <option value=\"Freedom to make life choices\">Freedom to make life choices</option>\n                    <option value=\"Perceptions of corruption\">Perceptions of corruption</option>\n                    <option value=\"Positive affect\">Positive affect</option>\n                    <option value=\"Negative affect\">Negative affect</option>\n                </select>\n            </div>\n        ';
   var choice2_html1 = '\n                <h4>Type</h4>\n                <div class=\"user-control\">\n                    <select id=\"Type\" class=\"form-control\" onchange=\"dataManipulation()\">\n                        <option value=\"value\">Value</option>\n                        <option value=\"change\">Change</option>\n                    </select>\n                </div>\n            ';
   var choice2_html2 = '\n                <h4>Location</h4>\n                </label>\n        <input type=\"text\" id=\"locationInput\" value=\"Finland;Denmark;Iceland;Sweden;Australia\" placeholder=\"Please input locations connected with semicolons\">\n        <button id=\"searchButton\">Search</button>\n    ';
   var choice2_html3 = '\n                <h4>Location</h4>\n                </label>\n        <input type=\"text\" id=\"locationInput\" value=\"Finland\" placeholder=\"Please input a location\">\n        <button id=\"searchButton\">Search</button>\n    ';
+  var choice2_html4 = '';
+  var choice2_html5 = '\n            <h4>Variable2</h4>\n            <div class=\"user-control\">\n                <select id=\"Variable2\" class=\"form-control\" onchange=\"densityUpdate()\">\n                    <option value=\"Life Ladder\">Life Ladder</option>\n                    <option value=\"Log GDP per capita\" selected>Log GDP per capita</option>\n                    <option value=\"Social support\">Social support</option>\n                    <option value=\"Freedom to make life choices\">Freedom to make life choices</option>\n                    <option value=\"Perceptions of corruption\">Perceptions of corruption</option>\n                    <option value=\"Positive affect\">Positive affect</option>\n                    <option value=\"Negative affect\">Negative affect</option>\n                </select>\n            </div>\n        ';
   var selectBox = document.getElementById("Plot");
   plot_fig = selectBox.options[selectBox.selectedIndex].value;
   if (plot_fig == 'World Map') {
-      update = true;
       document.getElementById("div_choice1").innerHTML = choice1_html1;
       document.getElementById("div_choice2").innerHTML = choice2_html1;
       var selectBox1 = document.getElementById("Variable");
@@ -496,7 +791,6 @@ function figselect() {
       var type = selectBox2.options[selectBox2.selectedIndex].value;
       data_presentation(variable, type, update);
   } else if (plot_fig == 'Line Chart1') {
-      update = true;
       document.getElementById("div_choice1").innerHTML = choice1_html2;
       document.getElementById("div_choice2").innerHTML = choice2_html2;
       const searchButton = document.getElementById("searchButton");
@@ -519,8 +813,7 @@ function figselect() {
             alert("Please input locations connected with semicolons!");
           }
       });}
-      else {
-        update = true;
+      else if (plot_fig == 'Line Chart2') {
         var variable_ornot = [];
         for (var i = 0; i < variable_list.length; i++) {
           variable_ornot.push(true);
@@ -540,6 +833,22 @@ function figselect() {
             alert("Please input a location!");
           }
       });
+      }
+      else if (plot_fig == 'Histogram') {
+        document.getElementById("div_choice1").innerHTML = choice1_html4;
+        document.getElementById("div_choice2").innerHTML = choice2_html4;
+        var selectBox1 = document.getElementById("Variable");
+        var variable = selectBox1.options[selectBox1.selectedIndex].value;
+        histogramPlot(variable, update);
+      }
+      else {
+        document.getElementById("div_choice1").innerHTML = choice1_html5;
+        document.getElementById("div_choice2").innerHTML = choice2_html5;
+        var selectBox1 = document.getElementById("Variable1");
+        var variable1 = selectBox1.options[selectBox1.selectedIndex].value;
+        var selectBox2 = document.getElementById("Variable2");
+        var variable2 = selectBox2.options[selectBox2.selectedIndex].value;
+        densityPlot(variable1, variable2, update);
       }
 }
 
